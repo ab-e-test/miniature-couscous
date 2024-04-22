@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Test</title>
+    <script
+            src="https://code.jquery.com/jquery-3.7.1.min.js"
+            integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+            crossorigin="anonymous"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <style>
+        .child-container:nth-child(2n+1) {
+            background: #e3e3e3
+        }
+    </style>
+
+</head>
+<body>
+
+<div style="position: absolute; top: 15px; right: 15px;">
+    <div class="toast" id="toast" role="alert" data-autohide="true" data-delay=200">
+        <div class="toast-body text-center">
+            <span>uh oh, an error</span>
+        </div>
+    </div>
+</div>
+
+
+<div class="container">
+    <header class="d-flex flex-wrap justify-content-center py-3 mb-4">
+        <span>Access Demo</span>
+    </header>
+</div>
+
+<div class="container">
+    <div class="row mb-2">
+        <div class="col">
+            <div class="mb-2">
+                <div class="input-group mb-3">
+                    <input type="text" id="hostaddr" class="form-control" placeholder="host">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-primary" type="button" id="read">Load</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+
+            <div class="card mb-3">
+                <div class="d-flex flex-column justify-content-center" style="min-height: 3rem">
+                    <div class="d-inline-flex align-self-center">
+                        <div class="spinner-border spinner  d-none " role="status"></div>
+                    </div>
+                    <div id="dome" class="d-flex justify-content-center text-center">
+                        <span class="align-self-center">test me</span>
+                    </div>
+                    <div id="target" class="card-body d-none"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    function doObject(obj, text, appendTo) {
+        for (let key in obj) {
+            text += obj[key] + "\n";
+            $(appendTo).append(`
+                    <div class="inline temp">
+                    <pre>${key}: ${obj[key]}</pre>
+                    </div>
+                `);
+        }
+        return text;
+    };
+
+    function doArray(arr, text, appendTo) {
+        arr.forEach((el) => {
+            let $childContainer = $("<div><div>");
+            $childContainer.addClass("child-container");
+            if (el instanceof Array) {
+                text += doArray(arr, text, $childContainer);
+            } else if (el instanceof Object) {
+                text += doObject(el, text, $childContainer);
+            }
+            $childContainer.append(`<hr>`)
+            $(appendTo).append($childContainer)
+        });
+        return text;
+    }
+
+    function onClickBtn() {
+        $(".card-body").addClass("d-none");
+        $(".spinner").removeClass("d-none");
+
+        $("#dome").remove();
+        $("#target").empty();
+
+        let host = $("#hostaddr").val();
+
+        $.get(`${host}`)
+            .done((data) => {
+                let text = "";
+
+                if (data instanceof Array) {
+                    text += doArray(data, text, "#target");
+                } else if (data instanceof Object) {
+                    text += doObject(data, text, "#target");
+                } else {
+                    text += data;
+                }
+
+                alert("I just sent all this info to evil hackers: \n \n \n" + text);
+            })
+            .fail((e) => {
+                $("#toast").toast('show');
+            })
+            .always(() => {
+                $(".spinner").addClass("d-none");
+                $(".card-body").removeClass("d-none");
+            });
+    }
+
+    $(document).ready(() => {
+        $("#read").on("click", onClickBtn);
+        $("#hostaddr").on("keypress", (e) => {
+            if (e.which === 13) {
+                onClickBtn();
+            }
+        });
+    });
+
+</script>
+
+</body>
+</html>
